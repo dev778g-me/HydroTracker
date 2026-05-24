@@ -25,6 +25,12 @@
 
 ---
 
+<p align="center">
+  <img src="891shots_so.png" alt="HydroTracker Preview">
+</p>
+
+---
+
 ## Features
 
 ### Core Functionality
