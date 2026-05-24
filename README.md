@@ -23,6 +23,10 @@
   <img src="https://img.shields.io/badge/Compose-BOM%202025.07.00-purple.svg" alt="Compose Version">
 </p>
 
+<p align="center">
+  <em>This project is a fork of the original HydroTracker project with additional improvements and modifications.</em>
+</p>
+
 ---
 
 <p align="center">
