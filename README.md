@@ -20,11 +20,12 @@
   <img src="https://img.shields.io/badge/Android-API%2026+-green.svg" alt="API Level">
   <img src="https://img.shields.io/badge/Kotlin-2.0.21-blue.svg" alt="Kotlin Version">
   <img src="https://img.shields.io/badge/License-GPL%20v3-orange.svg" alt="License">
+  <img src="https://img.shields.io/github/v/release/dev778g-me/HydroTracker?label=Version&color=blue" alt="Latest Release">
   <img src="https://img.shields.io/badge/Compose-BOM%202025.07.00-purple.svg" alt="Compose Version">
 </p>
 
 <p align="center">
-  <em>This project is a fork of the original HydroTracker project with additional improvements and modifications.</em>
+  <em>This project is a fork of the original HydroTracker project with additional improvements, fixes, and modifications.</em>
 </p>
 
 ---
@@ -95,8 +96,8 @@ More details and research sources can be found inside the app settings or in [so
 </p>
 
 <p align="center">
-  <a href="https://github.com/YOUR_USERNAME/YOUR_REPO/releases">
-    <img src="https://img.shields.io/github/v/release/YOUR_USERNAME/YOUR_REPO?label=Download&style=for-the-badge&logo=github&color=blue" alt="GitHub Release">
+  <a href="https://github.com/dev778g-me/HydroTracker/releases/tag/v2.0.0">
+    <img src="https://img.shields.io/badge/Download-v2.0.0-blue?style=for-the-badge&logo=github" alt="Download Release">
   </a>
 </p>
 
