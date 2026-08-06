@@ -54,7 +54,6 @@ import androidx.compose.ui.unit.dp
 import com.dev.hydrotracker.data.models.BeveragePreferences
 import com.dev.hydrotracker.data.models.BeverageType
 import com.dev.hydrotracker.data.repository.UserRepository
-import org.dev.korner.AbsoluteSmoothCornerShape
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
@@ -191,7 +190,7 @@ fun BeverageTypesScreen(
                 item(key = "WATER") {
                     val visibleGroupSize = 1 + splitCount
                     Surface(
-                        shape = segmentShape(0, visibleGroupSize),
+                        shape = MaterialTheme.shapes.medium,
                         tonalElevation = 2.dp,
                         modifier = Modifier.fillMaxWidth().padding(bottom = 2.dp)
                     ) {
@@ -224,7 +223,7 @@ fun BeverageTypesScreen(
                             type = type,
                             isDragging = isDragging,
                             isHidden = false,
-                            shape = segmentShape(idx + 1, 1 + splitCount),
+                            shape = MaterialTheme.shapes.medium,
                             modifier = Modifier.draggableHandle(
                                 onDragStarted = {
                                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -275,7 +274,7 @@ fun BeverageTypesScreen(
                                 type = type,
                                 isDragging = isDragging,
                                 isHidden = true,
-                                shape = segmentShape(idx, hiddenItems.size),
+                                shape = MaterialTheme.shapes.medium,
                                 modifier = Modifier.draggableHandle(
                                     onDragStarted = {
                                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -346,13 +345,3 @@ private fun BeverageTypeRow(
     }
 }
 
-private fun segmentShape(index: Int, size: Int): Shape {
-    val outer = 16.dp
-    val inner = 4.dp
-    return when {
-        size == 1 -> AbsoluteSmoothCornerShape(outer)
-        index == 0 -> AbsoluteSmoothCornerShape(topLeftRadius = outer, topRightRadius = outer, bottomLeftRadius = inner, bottomRightRadius = inner)
-        index == size - 1 -> AbsoluteSmoothCornerShape(topLeftRadius = inner, topRightRadius = inner, bottomLeftRadius = outer, bottomRightRadius = outer)
-        else -> AbsoluteSmoothCornerShape(inner)
-    }
-}

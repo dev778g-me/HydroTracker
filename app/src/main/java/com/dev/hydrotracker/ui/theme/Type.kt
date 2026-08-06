@@ -79,6 +79,7 @@ val Outfit = FontFamily(
 
 fun getTypography(appFont: AppFont): Typography {
     val fontFamily = when (appFont) {
+        AppFont.DEFAULT -> FontFamily.Default
         AppFont.ROBOTO -> RobotoFlexVariable
         AppFont.DMSANS -> Dmsans
         AppFont.JETBRAINS_MONO -> JetbrainsMono

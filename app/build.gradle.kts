@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -5,7 +7,7 @@ plugins {
 }
 kotlin {
     compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+        jvmTarget.set(JvmTarget.JVM_11)
         freeCompilerArgs.addAll(listOf(
             "-opt-in=androidx.compose.material3.ExperimentalMaterial3ExpressiveApi"
         ))
@@ -19,8 +21,8 @@ android {
         applicationId = "com.dev.hydrotracker"
         minSdk = 26
         targetSdk = 36
-        versionCode = 26
-        versionName = "1.0.5"
+        versionCode = 27
+        versionName = "2.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -29,7 +31,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -37,6 +40,10 @@ android {
             ndk {
                 debugSymbolLevel = "FULL"
             }
+        }
+        debug {
+            manifestPlaceholders["appName"] = "HydroTracker(Debug)"
+            applicationIdSuffix = ".debug"
         }
     }
     compileOptions {

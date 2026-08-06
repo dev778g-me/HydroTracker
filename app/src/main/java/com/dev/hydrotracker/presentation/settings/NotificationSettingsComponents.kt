@@ -39,16 +39,21 @@ fun NotificationSettingsSection(
     }
 
     var isNotificationsEnabled by remember {
-        mutableStateOf(hasPermission && userProfile?.isOnboardingCompleted == true)
+        mutableStateOf(
+            hasPermission && hasExactAlarmPermission && userProfile?.isOnboardingCompleted == true
+        )
     }
 
     var refreshTrigger by remember { mutableIntStateOf(0) }
+
+    val allPermissionsGranted = hasPermission && hasExactAlarmPermission
 
     // Function to refresh permission status
     val refreshPermissions = {
         hasPermission = NotificationPermissionManager.hasNotificationPermission(context)
         hasExactAlarmPermission = NotificationPermissionManager.hasExactAlarmPermission(context)
-        isNotificationsEnabled = hasPermission && hasExactAlarmPermission && userProfile?.isOnboardingCompleted == true
+        isNotificationsEnabled =
+            hasPermission && hasExactAlarmPermission && userProfile?.isOnboardingCompleted == true
     }
 
     // Update states when userProfile changes or refresh is triggered
@@ -56,13 +61,12 @@ fun NotificationSettingsSection(
         refreshPermissions()
     }
 
-    // Listen for when app regains focus to refresh permissions (same logic as Health Connect)
+    // Listen for when app regains focus to refresh permissions
     androidx.compose.runtime.DisposableEffect(Unit) {
         val activity = context as? androidx.activity.ComponentActivity
         val listener = object : android.app.Application.ActivityLifecycleCallbacks {
             override fun onActivityResumed(activity: android.app.Activity) {
                 if (activity == context) {
-                    // Refresh permissions when returning to this screen
                     refreshTrigger++
                 }
             }
@@ -90,276 +94,140 @@ fun NotificationSettingsSection(
             initialOffsetY = { it / 2 }
         ) + fadeIn(animationSpec = tween(600, delayMillis = 300))
     ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(5.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Header
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = "Hydration Reminders",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
+        SettingsSectionCard {
+            // Header
 
-                // Permission Status Card
-                NotificationPermissionCard(
-                    hasPermission = hasPermission,
-                    hasExactAlarmPermission = hasExactAlarmPermission,
-                    onRequestPermission = {
+
+            // Main toggle
+            val toggleReminders: (Boolean) -> Unit = { enabled ->
+                isNotificationsEnabled = enabled
+                if (enabled) {
+                    if (!allPermissionsGranted) {
                         onRequestPermission()
-                        // Update state after permission request
-                        hasPermission = NotificationPermissionManager.hasNotificationPermission(context)
-                        hasExactAlarmPermission = NotificationPermissionManager.hasExactAlarmPermission(context)
-                        if (hasPermission && hasExactAlarmPermission && userProfile != null) {
-                            isNotificationsEnabled = true
-                            HydroNotificationScheduler.startNotifications(context, userProfile)
-                        }
-                    },
-                    onRequestExactAlarmPermission = {
                         NotificationPermissionManager.requestExactAlarmPermission(context)
                     }
-                )
+                    if (userProfile != null) {
+                        coroutineScope.launch {
+                            HydroNotificationScheduler.startNotifications(context, userProfile)
+                        }
+                    }
+                } else {
+                    coroutineScope.launch {
+                        HydroNotificationScheduler.stopNotifications(context)
+                    }
+                }
+            }
 
-                // Notification Settings (only show if all permissions granted)
-                if (hasPermission && hasExactAlarmPermission && userProfile != null) {
-                    NotificationControlsCard(
-                        userProfile = userProfile,
-                        isEnabled = isNotificationsEnabled,
-                        onToggleNotifications = { enabled ->
-                            isNotificationsEnabled = enabled
-                            coroutineScope.launch {
-                                if (enabled) {
-                                    HydroNotificationScheduler.startNotifications(context, userProfile)
+            SettingsJoinedBlock(
+                isFirst = true,
+                isLast = !isNotificationsEnabled,
+                checked = isNotificationsEnabled,
+                enabled = userProfile?.isOnboardingCompleted == true,
+                onCheckedChange = toggleReminders
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Hydration Reminders",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = if (userProfile != null) {
+                                "Get reminded every ${userProfile.reminderInterval} minutes"
+                            } else {
+                                "Complete onboarding to enable reminders"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Switch(
+                        checked = isNotificationsEnabled,
+                        enabled = userProfile?.isOnboardingCompleted == true,
+                        onCheckedChange = toggleReminders,
+                        thumbContent = if (isNotificationsEnabled) {
+                            {
+                                Icon(
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    imageVector = Icons.Filled.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize),
+                                )
+                            }
+                        } else {
+                            null
+                        }
+                    )
+                }
+            }
+
+            if (isNotificationsEnabled) {
+                SettingsJoinedBlock(isFirst = false, isLast = true) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        if (allPermissionsGranted && userProfile != null) {
+                            NotificationDetailRow(
+                                icon = Icons.Default.Schedule,
+                                label = "Reminder Frequency",
+                                value = "Every ${userProfile.reminderInterval} minutes"
+                            )
+
+                            NotificationDetailRow(
+                                icon = Icons.Default.WbSunny,
+                                label = "Active Hours",
+                                value = "${userProfile.wakeUpTime} - ${userProfile.sleepTime}"
+                            )
+
+                            NotificationDetailRow(
+                                icon = Icons.Default.Style,
+                                label = "Reminder Style",
+                                value = userProfile.reminderStyle.getDisplayName()
+                            )
+
+                            // Next notification info
+                            val nextNotificationTime = remember(userProfile, isNotificationsEnabled) {
+                                if (isNotificationsEnabled) {
+                                    HydroNotificationScheduler.getNextScheduledTime(context, userProfile)
                                 } else {
-                                    HydroNotificationScheduler.stopNotifications(context)
+                                    null
                                 }
                             }
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
 
-@Composable
-private fun NotificationPermissionCard(
-    hasPermission: Boolean,
-    hasExactAlarmPermission: Boolean,
-    onRequestPermission: () -> Unit,
-    onRequestExactAlarmPermission: () -> Unit
-) {
-    val allPermissionsGranted = hasPermission && hasExactAlarmPermission
-    
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = if (allPermissionsGranted) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.errorContainer
-            }
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Main permission status
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Icon(
-                    imageVector = if (allPermissionsGranted) Icons.Default.CheckCircle else Icons.Default.Warning,
-                    contentDescription = null,
-                    tint = if (allPermissionsGranted) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onErrorContainer
-                    },
-                    modifier = Modifier.size(24.dp)
-                )
-
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = if (allPermissionsGranted) "Notifications Ready" else "Permissions Required",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        text = if (allPermissionsGranted) {
-                            "You'll receive hydration reminders"
+                            if (nextNotificationTime != null) {
+                                NotificationDetailRow(
+                                    icon = Icons.Default.Schedule,
+                                    label = "Next Reminder",
+                                    value = nextNotificationTime
+                                )
+                            }
                         } else {
-                            "Grant permissions to enable notifications"
-                        },
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-            
-            // Individual permission buttons
-            if (!allPermissionsGranted) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                
-                if (!hasPermission) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Notification Permission",
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Button(
-                            onClick = onRequestPermission,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.error
-                            )
-                        ) {
-                            Text("Allow")
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Warning,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text(
+                                    text = "Grant notification permission to enable reminders",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
-                }
-                
-                if (!hasExactAlarmPermission) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Alarm Scheduling",
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Button(
-                            onClick = onRequestExactAlarmPermission,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.error
-                            )
-                        ) {
-                            Text("Allow")
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun NotificationControlsCard(
-    userProfile: UserProfile,
-    isEnabled: Boolean,
-    onToggleNotifications: (Boolean) -> Unit
-) {
-    val context = LocalContext.current
-
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Main toggle
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Hydration Reminders",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        text = "Get reminded every ${userProfile.reminderInterval} minutes",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                Switch(
-                    checked = isEnabled,
-                    onCheckedChange = onToggleNotifications,
-                    thumbContent = if (isEnabled) {
-                        {
-                            Icon(
-                                imageVector = Icons.Filled.Check,
-                                contentDescription = null,
-                                modifier = Modifier.size(SwitchDefaults.IconSize),
-                            )
-                        }
-                    } else {
-                        null
-                    }
-                )
-            }
-
-            if (isEnabled) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-                // Reminder details
-                NotificationDetailRow(
-                    icon = Icons.Default.Schedule,
-                    label = "Reminder Frequency",
-                    value = "Every ${userProfile.reminderInterval} minutes"
-                )
-
-                NotificationDetailRow(
-                    icon = Icons.Default.WbSunny,
-                    label = "Active Hours",
-                    value = "${userProfile.wakeUpTime} - ${userProfile.sleepTime}"
-                )
-
-                NotificationDetailRow(
-                    icon = Icons.Default.Style,
-                    label = "Reminder Style",
-                    value = userProfile.reminderStyle.getDisplayName()
-                )
-
-                // Next notification info (refreshes every time the composable recomposes)
-                val nextNotificationTime = remember(userProfile, isEnabled) {
-                    if (isEnabled) {
-                        HydroNotificationScheduler.getNextScheduledTime(context, userProfile)
-                    } else {
-                        null
-                    }
-                }
-
-                if (nextNotificationTime != null) {
-                    NotificationDetailRow(
-                        icon = Icons.Default.Schedule,
-                        label = "Next Reminder",
-                        value = nextNotificationTime
-                    )
                 }
             }
         }

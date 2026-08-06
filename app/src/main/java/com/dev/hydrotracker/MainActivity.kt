@@ -56,9 +56,11 @@ import com.dev.hydrotracker.presentation.onboarding.OnboardingScreen
 import com.dev.hydrotracker.presentation.onboarding.OnboardingViewModel
 import com.dev.hydrotracker.presentation.onboarding.OnboardingViewModelFactory
 import com.dev.hydrotracker.presentation.profile.ProfileScreen
+import com.dev.hydrotracker.presentation.settings.AboutScreen
 import com.dev.hydrotracker.presentation.settings.BeverageTypesScreen
 import com.dev.hydrotracker.presentation.settings.HealthConnectDataScreen
 import com.dev.hydrotracker.presentation.settings.SettingsScreen
+import com.dev.hydrotracker.presentation.settings.WidgetCustomizationScreen
 import com.dev.hydrotracker.ui.theme.HydroTrackerTheme
 import kotlinx.coroutines.launch
 
@@ -217,28 +219,28 @@ fun HydroTrackerApp(
 
                     enterTransition = {
                         slideInHorizontally(
-                            initialOffsetX = { it / 3 },
+                            initialOffsetX = { it },
                             animationSpec = motion.defaultSpatialSpec()
                         )
                     },
 
                     exitTransition = {
                         slideOutHorizontally(
-                            targetOffsetX = { -it / 3 },
+                            targetOffsetX = { -it },
                             animationSpec = motion.fastSpatialSpec()
                         )
                     },
 
                     popEnterTransition = {
                         slideInHorizontally(
-                            initialOffsetX = { -it / 3 },
+                            initialOffsetX = { -it },
                             animationSpec = motion.defaultSpatialSpec()
                         )
                     },
 
                     popExitTransition = {
                         slideOutHorizontally(
-                            targetOffsetX = { it / 3 },
+                            targetOffsetX = { it },
                             animationSpec = motion.fastSpatialSpec()
                         )
                     }
@@ -342,8 +344,14 @@ fun HydroTrackerApp(
                             onNavigateToBeverageTypes = {
                                 navController.navigate(NavigationRoutes.BEVERAGE_TYPES)
                             },
+                            onNavigateToWidgetCustomization = {
+                                navController.navigate(NavigationRoutes.WIDGET_CUSTOMIZATION)
+                            },
                             onNavigateToHealthConnectData = {
                                 navController.navigate(NavigationRoutes.HEALTH_CONNECT_DATA)
+                            },
+                            onNavigateToAbout = {
+                                navController.navigate(NavigationRoutes.ABOUT)
                             }
                         )
                     }
@@ -358,6 +366,19 @@ fun HydroTrackerApp(
                     composable(NavigationRoutes.BEVERAGE_TYPES) {
                         BeverageTypesScreen(
                             userRepository = userRepository,
+                            onNavigateBack = { navController.popBackStack() }
+                        )
+                    }
+
+                    composable(NavigationRoutes.WIDGET_CUSTOMIZATION) {
+                        WidgetCustomizationScreen(
+                            userRepository = userRepository,
+                            onNavigateBack = { navController.popBackStack() }
+                        )
+                    }
+
+                    composable(NavigationRoutes.ABOUT) {
+                        AboutScreen(
                             onNavigateBack = { navController.popBackStack() }
                         )
                     }

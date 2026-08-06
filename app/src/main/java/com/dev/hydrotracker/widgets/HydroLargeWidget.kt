@@ -125,7 +125,7 @@ class HydroLargeWidget : AppWidgetProvider() {
                 views.setProgressBar(R.id.widget_progress_bar, 100, progressPercent, false)
                 
                 // Set up quick add buttons
-                setupQuickAddButtons(context, views)
+                setupQuickAddButtons(context, views, userRepository.loadWidgetPreferences().amounts)
                 
                 // Set main click intent
                 val intent = Intent(context, MainActivity::class.java)
@@ -161,54 +161,43 @@ class HydroLargeWidget : AppWidgetProvider() {
         }
     }
     
-    private fun setupQuickAddButtons(context: Context, views: RemoteViews) {
-        // 250ml button
-        val btn250Intent = Intent(context, HydroLargeWidget::class.java).apply {
-            action = ACTION_QUICK_ADD
-            putExtra(EXTRA_AMOUNT, 250.0)
-            putExtra(EXTRA_CONTAINER, "Glass")
-        }
-        val btn250PendingIntent = PendingIntent.getBroadcast(
-            context, 1001, btn250Intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    private fun setupQuickAddButtons(
+        context: Context,
+        views: RemoteViews,
+        amounts: List<Int> = com.dev.hydrotracker.data.models.WidgetPreferences.DEFAULT_AMOUNTS
+    ) {
+        val buttonConfigs = listOf(
+            Triple(R.id.widget_btn_250, R.id.widget_btn_250_text, "Glass"),
+            Triple(R.id.widget_btn_300, R.id.widget_btn_300_text, "Glass"),
+            Triple(R.id.widget_btn_500, R.id.widget_btn_500_text, "Bottle"),
+            Triple(R.id.widget_btn_1l, R.id.widget_btn_1l_text, "Large Bottle")
         )
-        views.setOnClickPendingIntent(R.id.widget_btn_250, btn250PendingIntent)
 
-        // 300ml button
-        val btn300Intent = Intent(context, HydroLargeWidget::class.java).apply {
-            action = ACTION_QUICK_ADD
-            putExtra(EXTRA_AMOUNT, 300.0)
-            putExtra(EXTRA_CONTAINER, "Glass")
-        }
-        val btn300PendingIntent = PendingIntent.getBroadcast(
-            context, 1002, btn300Intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        views.setOnClickPendingIntent(R.id.widget_btn_300, btn300PendingIntent)
+        buttonConfigs.forEachIndexed { index, config ->
+            val (buttonId, textId, container) = config
+            val amount = amounts.getOrElse(index) { com.dev.hydrotracker.data.models.WidgetPreferences.DEFAULT_AMOUNTS[index] }.toDouble()
 
-        // 500ml button
-        val btn500Intent = Intent(context, HydroLargeWidget::class.java).apply {
-            action = ACTION_QUICK_ADD
-            putExtra(EXTRA_AMOUNT, 500.0)
-            putExtra(EXTRA_CONTAINER, "Bottle")
-        }
-        val btn500PendingIntent = PendingIntent.getBroadcast(
-            context, 1003, btn500Intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        views.setOnClickPendingIntent(R.id.widget_btn_500, btn500PendingIntent)
+            views.setTextViewText(textId, formatWidgetLabel(amount))
 
-        // 1L button
-        val btn1lIntent = Intent(context, HydroLargeWidget::class.java).apply {
-            action = ACTION_QUICK_ADD
-            putExtra(EXTRA_AMOUNT, 1000.0)
-            putExtra(EXTRA_CONTAINER, "Large Bottle")
+            val clickIntent = Intent(context, HydroLargeWidget::class.java).apply {
+                action = ACTION_QUICK_ADD
+                putExtra(EXTRA_AMOUNT, amount)
+                putExtra(EXTRA_CONTAINER, container)
+            }
+            val pending = PendingIntent.getBroadcast(
+                context, 1001 + index, clickIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            views.setOnClickPendingIntent(buttonId, pending)
         }
-        val btn1lPendingIntent = PendingIntent.getBroadcast(
-            context, 1004, btn1lIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        views.setOnClickPendingIntent(R.id.widget_btn_1l, btn1lPendingIntent)
+    }
+
+    private fun formatWidgetLabel(amount: Double): String {
+        return if (amount >= 1000 && amount % 1000 == 0.0) {
+            "${(amount / 1000).toInt()}L"
+        } else {
+            "${amount.toInt()}ml"
+        }
     }
     
     private fun updateWidgetWithDefaults(

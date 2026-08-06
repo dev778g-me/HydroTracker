@@ -55,6 +55,7 @@ reorderable = { group = "sh.calvin.reorderable", name = "reorderable", version.r
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+androidBuiltInKotlin = {id ="com.android.built-in-kotlin",version.ref ="agp"}
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

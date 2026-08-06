@@ -215,7 +215,7 @@ class UserRepository(context: Context) {
             ),
             usePureBlack = prefs.getBoolean("use_pure_black", false),
             appFont = AppFont.valueOf(
-                prefs.getString("app_font", AppFont.GOOGLE_SANS.name) ?: AppFont.GOOGLE_SANS.name
+                prefs.getString("app_font", AppFont.DEFAULT.name) ?: AppFont.DEFAULT.name
             )
         )
     }
@@ -232,6 +232,29 @@ class UserRepository(context: Context) {
      */
     fun loadDeveloperOptionsEnabled(): Boolean {
         return prefs.getBoolean("developer_options_enabled", false)
+    }
+
+    /**
+     * Save widget customization preferences
+     */
+    fun saveWidgetPreferences(widgetPreferences: WidgetPreferences) {
+        prefs.edit().apply {
+            widgetPreferences.amounts.forEachIndexed { index, amount ->
+                putInt("widget_amount_$index", amount)
+            }
+            apply()
+        }
+    }
+
+    /**
+     * Load widget customization preferences, falling back to hardcoded defaults
+     */
+    fun loadWidgetPreferences(): WidgetPreferences {
+        return WidgetPreferences(
+            amounts = List(WidgetPreferences.DEFAULT_AMOUNTS.size) { index ->
+                prefs.getInt("widget_amount_$index", WidgetPreferences.DEFAULT_AMOUNTS[index])
+            }
+        )
     }
 
     private fun loadBeveragePreferences(): BeveragePreferences {
